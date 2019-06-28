@@ -1,0 +1,215 @@
+---
+title: "HW2"
+author: "Ziran Xu"
+date: "2019/2/8"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Q1 (a)(b)
+
+```{r}
+sigma = 0.1; r=0.06; g=0.04; N=12; t=0.5 ; S0=0.85 ;K=0.95
+dt=t/N
+u=exp(sigma*sqrt(dt)); d=1/u
+S=matrix(NA,nrow=13,ncol=13) #form a matrix that contains 12 steps and 13 final stock results
+for(i in 1:13)
+{
+  for(j in 1:i)
+  {
+    S[j,i]= S0*u^(i-j)*d^(j-1)
+  }
+}
+discount_factor=exp(-(r-g)*dt)
+P=matrix(NA,nrow=13,ncol=13)
+for(i in 1:13)
+{
+  P[i,13] =max(K-S[i,13],0)
+}
+p=(1/discount_factor-d)/(u-d); q=1-p
+for(i in 12:1)
+{
+  for(j in 1:i)
+  {
+    P[j,i] =max(K-S[j,i],(P[j,i+1]*p+P[j+1,i+1]*q)*discount_factor)
+  }
+}
+cat("The value of the put option is",P[1,1],"\n")
+delta= (P[1,2]-P[2,2])/(S[1,2]-S[2,2])
+h=(S[3,3]-S[1,3])/2
+d1=(P[2,3]-P[1,3])/(S[2,3]-S[1,3]); d2=(P[3,3]-P[2,3])/(S[3,3]-S[2,3])
+gamma=(d2-d1)/h
+thelta=(P[2,3]-P[1,1])/(2*dt)
+cat("The Delta, Gamma and Thelta are:",delta," ; ",gamma," ; ",thelta,"separately.")
+
+```
+## Q1 (c)
+
+```{r}
+sigma_new = 0.101 ;r=0.06; g=0.04; N=12; t=0.5 ; S0=0.85 ;K=0.95
+dt=N/t
+u_new=exp(sigma_new*sqrt(dt)); d_new=1/u_new
+S_new=matrix(NA,nrow=13,ncol=13) 
+for(i in 1:13)
+{
+  for(j in 1:i)
+  {
+    S_new[j,i]= S0*u_new^(i-j)*d_new^(j-1)
+  }
+}
+discount_factor_new=exp(-(r-g)*dt)
+P_new=matrix(NA,nrow=13,ncol=13)
+for(i in 1:13)
+{
+  P_new[i,13] =max(K-S_new[i,13],0)
+}
+p_new=(1/discount_factor_new-d_new)/(u_new-d_new); q_new=1-p_new
+for(i in 12:1)
+{
+  for(j in 1:i)
+  {
+    P_new[j,i] =max(K-S_new[j,i],(P_new[j,i+1]*p_new+P_new[j+1,i+1]*q_new)*discount_factor_new)
+  }
+}
+vega=(P_new[1,1]-P[1,1])/(sigma_new-sigma)
+cat("The value of Vega is ",vega)
+```
+## Q1 (d)
+
+```{r}
+sigma = 0.1; r=0.06; g=0.04; N=12; t=0.5 ; S0=0.85 ;K=0.95
+dt=t/N
+u_ad=exp((r-g-sigma^2/2)*dt+sigma*sqrt(dt))
+d_ad=exp((r-g-sigma^2/2)*dt-sigma*sqrt(dt))
+S_ad=matrix(NA,nrow=13,ncol=13) 
+for(i in 1:13)
+{
+  for(j in 1:i)
+  {
+    S_ad[j,i]= S0*u_ad^(i-j)*d_ad^(j-1)
+  }
+}
+discount_factor_ad=exp(-(r-g)*dt)
+P_ad=matrix(NA,nrow=13,ncol=13)
+for(i in 1:13)
+{
+  P_ad[i,13] =max(K-S_ad[i,13],0)
+}
+p_ad=0.5; q_ad = 0.5
+for(i in 12:1)
+{
+  for(j in 1:i)
+  {
+    P_ad[j,i] =max(K-S_ad[j,i],(P_ad[j,i+1]*p_ad+P_ad[j+1,i+1]*q_ad)*discount_factor_ad)
+  }
+}
+cat("The put option value by ad hoc tree is",P_ad[1,1])
+```
+## Q2
+
+```{r}
+K_call=30;  sigma_call=0.15; t_call=0.5; N_call=12; r_call=0.1
+S0_call=28-1*(1+r_call)^(-2/12)-1*(1+r_call)^(-5/12)-1*(1+r_call)^(-7/12)
+dt_call=t_call/N_call
+u_call=exp(sigma_call*sqrt(dt_call)); d_call=1/u_call
+S_call=matrix(NA,nrow=13,ncol=13) 
+for(j in 1:13)
+{
+  for(i in 1:j)
+  {
+    S_call[i,j]= S0_call*u_call^(j-i)*d_call^(i-1)
+  }
+}
+
+
+for(j in 13:1)  #the divident from seven months
+{
+  for(i in 1:j)
+  {
+    S_call[i,j]=S_call[i,j]+1*exp(-r_call*(15-j)/24)
+  }
+}
+for(j in 10:1)  #the divident from fifth months
+{
+  for(i in 1:j)
+  {
+    S_call[i,j]=S_call[i,j]+1*exp(-r_call*(10-j)/24)
+  }
+}
+for(j in 4:1)  #the divident from second months
+{
+  for(i in 1:j)
+  {
+    S_call[i,j]=S_call[i,j]+1*exp(-r_call*(4-j)/24)
+  }
+}
+C_call=matrix(NA,nrow=13,ncol=13)
+for(i in 1:13)
+{
+  C_call[i,13] =max(S_call[i,13]-K_call,0)
+}
+p_call=(exp(r_call*dt_call)-d_call)/(u_call-d_call); q_call=1-p_call
+for(j in 12:1)
+{
+  for(i in 1:j)
+  {
+    C_call[i,j] =max(S_call[i,j]-K_call,(C_call[i,j+1]*p_call+C_call[i+1,j+1]*q_call)*exp(-r_call*t_call/N_call))
+  }
+}
+cat("The call option value is",C_call[1,1])
+```
+## Q3
+
+```{r}
+S0_q4 = 226.28;r_q4=0.0035;t_q4=1
+data=read.csv("vol_skew.csv");
+k_q4=S0_q4*data[1]
+sigma_q4 =data[2]/100
+k_Q4 = 1:length(k_q4[1])
+sigma_Q4 = 1:length(sigma_q4[1])
+for(i in 1:25)
+{
+  k_Q4[i]=k_q4[i,1]
+  sigma_Q4[i]= sigma_q4[i,1]
+}
+summary(lm(sigma_Q4~k_Q4+I((k_Q4)^2)))    #using quadratic interpotation by the formula:                                           Pi(k) = ai + bi*k + ci*k^2
+f=function(x)    #get the factors from summary and combine the quadratic interpotation                    formula
+{
+  f=9.213e-01-5.244e-03 *x+8.125e-06*x^2
+  return(f)
+}
+
+k_inter = seq(from=min(k_Q4),to=max(k_Q4),by=0.01)  # uniform distance in k of 0.01
+sigma_inter = f(k_inter)
+Pricing = function(para)     #calculate the prices
+{
+  d1=(log(S0_q4/para[1])+(r_q4+para[2]^2/2)*t_q4)/(para[2]*sqrt(t_q4))
+  d2=d1-para[2]*sqrt(t_q4)
+  c=S0_q4*mapply(pnorm,d1)-mapply(pnorm,d2)*para[1]*exp(-r_q4*t_q4)
+  return(c)
+}
+K_limit=c(147.08,294.16)          
+tailf=function(K,vol,x)       
+{
+  
+  price_ref=apply(cbind(x,vol), 1,Pricing)
+  return(-exp(r_q4*t_q4)*(price_ref[2]-price_ref[1])/1)
+}
+tail_one=tailf(k_inter,sigma_inter,K_limit[1])
+tail_two=tailf(k_inter,sigma_inter,K_limit[2])
+P_within=tail_two-tail_one
+CDF=1-tail_one
+cat(P_within,CDF)
+price_calculate=apply(cbind(k_inter,sigma_inter), 1, Pricing)
+pdf=exp(r_q4*t_q4)*(price_calculate[1:(length(price_calculate)-2)]+price_calculate[3:length(price_calculate)]-2*price_calculate[2:(length(price_calculate)-1)])/0.01^2
+```
+
+```{r pressure, echo=FALSE}
+plot(pdf,type = "l")
+```
